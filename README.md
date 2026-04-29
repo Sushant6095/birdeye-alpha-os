@@ -4,53 +4,57 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Part 1 — Birdeye client foundation.** No UI yet. Rock-solid typed REST client over the entire Birdeye endpoint surface (~78 endpoints). Built on:
+**Parts 1-2 complete.** No UI yet. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
 - Tailwind 3 + shadcn/ui scaffolding (components added in later parts)
 - Zod for input/output validation
+- Drizzle ORM + Neon Postgres
+- Upstash Redis (with Postgres `cached_responses` fallback)
 - pnpm
+
+**Part 1** — typed Birdeye REST client, ~78 endpoints, 14 categories.
+**Part 2** — persistence layer + cached wrapper + credit tracking + health route.
 
 ## Setup
 
 ```bash
 pnpm install
 cp .env.example .env
-# edit .env: set BIRDEYE_API_KEY
-pnpm test:client
+# fill in: BIRDEYE_API_KEY, DATABASE_URL (Neon), UPSTASH_REDIS_REST_URL/_TOKEN
+pnpm db:generate     # generate migrations from lib/db/schema/
+pnpm db:migrate      # apply to your Neon DB
+pnpm test:client     # 5-endpoint smoke test
 pnpm typecheck
-pnpm dev
+pnpm dev             # then GET http://localhost:3000/api/health
 ```
 
 ## Layout
 
 ```
-app/                    Next.js 15 App Router (placeholder)
+app/
+  api/health/route.ts   GET / DB+Redis+Birdeye liveness
 components/             shadcn/ui (later)
+drizzle/                generated migrations (committed)
 lib/
   utils.ts              cn() helper
+  db/
+    index.ts            Drizzle client (lazy Neon HTTP)
+    schema/             users, watchlists, alerts, ai, cache, credits
+  cache/
+    redis.ts            Upstash REST client + Postgres fallback + ping
   birdeye/
-    client.ts           base fetcher: retry, headers, errors, debug log
-    index.ts            barrel — single import surface
+    client.ts           base fetcher + credit observer hook
+    index.ts            raw barrel — direct API surface
+    cached.ts           cache wrapper, same signatures, category TTLs
+    credits.ts          observer subscriber → credit_usage_log
+    context.ts          AsyncLocalStorage for per-call userId
     types/              shared types + zod schemas (chain, common)
     rest/               one file per category, one fn per endpoint
-      price.ts          price & OHLCV (12)
-      stats.ts          token + pair overviews / market data (7)
-      tokens.ts         token & market lists (5)
-      transactions.ts   trade & tx feeds (16)
-      wallet.ts         wallet, networth, PnL (15)
-      holder.ts         holders, top traders (5)
-      balance.ts        balances & transfers (7)
-      blockchain.ts     network metadata (2)
-      creation.ts       token creation, trending (2)
-      meme.ts           meme tokens (2)
-      security.ts       token security (1)
-      smartmoney.ts     smart-money wallets (1)
-      history.ts        all-time + history (2)
-      search.ts         search & utils (2)
 scripts/
   test-client.ts        end-to-end smoke against 5 endpoints
+  db-migrate.ts         drizzle migrate runner
 ```
 
 ## Client features
@@ -184,7 +188,52 @@ pnpm test:client
 
 Hits price, token overview, holder list, wallet net worth, and search against SOL on Solana. Emits per-call latency + credit cost.
 
+## Caching (Part 2)
+
+Import from `@/lib/birdeye/cached` instead of `@/lib/birdeye` to use the cached layer — every endpoint name and signature is identical, so callers don't change.
+
+```ts
+import { getPrice } from "@/lib/birdeye/cached";
+const sol = await getPrice({ address: SOL_MINT }, "solana");
+```
+
+Cache key: `birdeye:{category}:{endpoint}:{sha1(input).slice(0,16)}:{chain}`.
+
+Reads check Upstash Redis first, fall back to Postgres `cached_responses`, and only then call Birdeye. Live calls fire the credit observer in [lib/birdeye/credits.ts](lib/birdeye/credits.ts), which writes one row to `credit_usage_log` per network call (cache hits log with `cache_hit=1`, `credits=0`). Use `getCreditsUsedToday(userId?)` for budget displays.
+
+| Category    | TTL      | Endpoints |
+| ----------- | -------- | --------- |
+| `price`     | 3 s      | `/defi/price`, `/defi/multi_price`, `/defi/price_volume/*` |
+| `ohlcv`     | 5 s ≤30m / 60 s ≥1h | `/defi/ohlcv*`, `/defi/history_price`, `/defi/v3/history/price` |
+| `trending`  | 30 s     | trending lists, gainers/losers, large trades, meme, smart money |
+| `txs`       | 30 s     | `/defi/txs/*`, `/defi/v3/*/txs*`, wallet tx feeds |
+| `transfers` | 60 s     | `/defi/v3/transfers/*` |
+| `networth`  | 60 s     | wallet portfolio, balances, networth |
+| `pnl`       | 2 min    | `/trader/wallet/pnl-*`, positions, realized/unrealized, top traders |
+| `holder`    | 10 min   | holder list, distribution, active holders |
+| `list`      | 60 s     | token & pair list endpoints |
+| `search`    | 5 min    | `/defi/v3/search` |
+| `security`  | 1 h      | `/defi/token_security` |
+| `metadata`  | 24 h     | overview, market-data, meta-data, creation info, networks, all-time stats |
+
+To attribute credits to a user, run the call inside `runWithBirdeyeContext`:
+
+```ts
+import { runWithBirdeyeContext, getPrice } from "@/lib/birdeye/cached";
+await runWithBirdeyeContext({ userId: req.user.id }, () =>
+  getPrice({ address }, "solana"),
+);
+```
+
+## Health check
+
+```
+GET /api/health
+```
+
+Returns 200 when DB + cache + Birdeye are all reachable, 503 otherwise. Per-check latency and detail string for fast triage.
+
 ## Next
 
-- Part 2: Postgres + Redis caching layer in front of the client.
 - Part 3: UI — terminal layout, charts, watchlist.
+- Part 4: alert engine running off `alert_rules`.

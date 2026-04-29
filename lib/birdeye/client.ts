@@ -149,6 +149,39 @@ function log(entry: DebugLog) {
   );
 }
 
+/* -------------------- credit observer hook -------------------- */
+export interface CreditUsageEvent {
+  endpoint: string;
+  method: "GET" | "POST";
+  chain: BirdeyeChain;
+  status: number;
+  cuConsumed?: number;
+  cuLeft?: number;
+  durationMs: number;
+}
+
+type CreditObserver = (e: CreditUsageEvent) => void;
+const observers: CreditObserver[] = [];
+
+/** Subscribe to per-call credit usage events. Returns an unsubscribe fn. */
+export function onCreditUsage(fn: CreditObserver): () => void {
+  observers.push(fn);
+  return () => {
+    const i = observers.indexOf(fn);
+    if (i >= 0) observers.splice(i, 1);
+  };
+}
+
+function emitCreditUsage(e: CreditUsageEvent) {
+  for (const fn of observers) {
+    try {
+      fn(e);
+    } catch {
+      /* observer errors must never break the call */
+    }
+  }
+}
+
 /**
  * Core call — does NOT export. Use `birdeyeGet` / `birdeyePost`.
  * - validates input against `input` schema
@@ -240,6 +273,15 @@ async function call<
         durationMs,
         cuConsumed,
         cuLeft,
+      });
+      emitCreditUsage({
+        endpoint: opts.path,
+        method: opts.method,
+        chain,
+        status: res.status,
+        cuConsumed,
+        cuLeft,
+        durationMs,
       });
 
       if (!res.ok) {
