@@ -10,6 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:client": "tsx scripts/test-client.ts",
+    "test:verdict": "node --import tsx --test lib/verdict/wallet.test.ts",
+    "test": "pnpm test:verdict",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:studio": "drizzle-kit studio",

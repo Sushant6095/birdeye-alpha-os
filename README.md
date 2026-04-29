@@ -4,7 +4,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Parts 1-5 complete.** Token Lens live. Stack:
+**Parts 1-6 complete.** Token Lens + Wallet Profiler live. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -19,6 +19,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 **Part 3** — WS sidecar (Hono + ws) → SSE bridge for all 9 Birdeye WebSocket streams + React hooks.
 **Part 4** — app shell (sidebar / topbar / chain selector / credit gauge / Cmd+K search) + `/discover` feed with 7 chip-tabs + infinite scroll.
 **Part 5** — `/token/[chain]/[address]` Token Lens: 8-call SSR header, OHLCV chart with WS price ticks, security/liquidity/holders/trades/top-traders/transfers panels.
+**Part 6** — `/wallet/[chain]/[address]` Wallet Profiler with 5 tabs (Holdings · PnL · Transactions · Transfers · Origin), live wallet-tx WS, single-token balance widget, and a deterministic Verdict label generated from a unit-tested heuristic.
 
 ## Setup
 
@@ -387,6 +388,74 @@ Any failure degrades to `null` so a single dead endpoint doesn't kill the page. 
 
 The `[chain]` segment is checked against the supported set; tokens on **Solana, Ethereum, Base** (plus the rest of the Birdeye list) all hit the same code path. Chain is forwarded to every cached call via `x-chain`.
 
+## Wallet Profiler (Part 6)
+
+`/wallet/[chain]/[address]` — paste any wallet, get the full picture in one screen.
+
+### Header (server, 3 parallel calls)
+
+[`loadWalletBundle`](components/wallet-detail/load-bundle.ts) issues `Promise.allSettled` over **Wallet Net Worth · PnL Summary · Wallet Token List**. The header renders even when individual calls fail.
+
+- Address with copy-to-clipboard.
+- Total net worth (USD) + 30-day sparkline (calls `/api/wallet/networth-chart`; degrades to a flat line when the upstream chart endpoint isn't on the plan).
+- Realized + unrealized PnL with a green/red sign + win-rate.
+- **Verdict** badge — this is our IP, see below.
+
+### Verdict layer ([lib/verdict/wallet.ts](lib/verdict/wallet.ts))
+
+Pure function `classifyWallet(inputs)` returns `{ label, confidence, reasons[] }` from one of:
+
+| Label | Trigger |
+| --- | --- |
+| Inactive | no trades or `daysSinceLastTx > 30` |
+| Sniper Bot | `avgHoldingHours < 1` AND `tradeCount > 50` |
+| Exit Liquidity | `winRate < 30%` AND `realizedPnl < -$1k` AND `tradeCount > 20` |
+| High-Risk Degen | `uniqueTokens > 100` AND `winRate < 40%` (or unprofitable fallback) |
+| Hodler | `avgHoldingHours > 30d` AND `tradeCount < 10` (or sparse-data fallback) |
+| Alpha Trader | `winRate ≥ 60%` AND `realizedPnl > $50k` AND `tradeCount > 30` |
+| Consistent Earner | `winRate ≥ 50%` AND `realizedPnl > 0` AND `tradeCount > 20` |
+
+Determinism is contractual — `classifyWallet(x) === classifyWallet(x)` for any `x`. Heuristics are documented inline so the rules are auditable without reading code.
+
+```bash
+pnpm test:verdict
+```
+
+[10 fixture tests + a determinism check](lib/verdict/wallet.test.ts), 11/11 passing.
+
+### Tabs
+
+| Tab | Sources |
+| --- | --- |
+| **Holdings** | Wallet Token List w/ 30s refresh, breakdown bar grouped to top 7 + “rest”, links to Token Lens |
+| **PnL** | Wallet PnL Detail; sortable on realized/unrealized/win/trades; clicking a token opens an in-row drill-down |
+| **Transactions** | Wallet Tx List initial fill, `useWalletTxStream` (Part 3) live appends with txHash dedup, "Load older →" via Trader Seek-by-Time |
+| **Transfers** | Transfers Wallet w/ totals (in/out count + volumes computed in the route handler) |
+| **Origin** | Iterative chain-of-custody trace via Transfers Wallet (depth 4) — earliest incoming transfer per hop, links each hop to that wallet's profile |
+
+### Sidebar
+
+[SideBalanceWidget](components/wallet-detail/side-balance-widget.tsx) — paste any token address, get this wallet's holding (`Wallet Token Balance`).
+
+### Multi-chain
+
+[`WalletChainSelector`](components/wallet-detail/wallet-chain-selector.tsx) replaces the topbar selector on this page; switching chain pushes the URL to `/wallet/{newchain}/{address}` so SSR re-runs against that network.
+
+### New API routes
+
+```
+/api/wallet/networth                — getWalletNetworth
+/api/wallet/networth-chart          — direct birdeyeGet, falls back to {items: []}
+/api/wallet/portfolio               — getWalletTokenList (30s refresh client-side)
+/api/wallet/pnl-summary             — getWalletPnLSummary
+/api/wallet/pnl-detail              — getWalletPnLDetail (sortable)
+/api/wallet/txs?mode=…              — wallet tx_list / trader seek-by-time
+/api/wallet/transfers               — getTransfersWallet + computed totals
+/api/wallet/balance                 — getWalletTokenBalance (sidebar widget)
+/api/wallet/funded-by               — recursive earliest-incoming chain of custody
+/api/wallet/balance-change          — running balance over per-token transfers
+```
+
 ## Next
 
-- Part 6: wallet profiler + alert engine running off `alert_rules`.
+- Part 7: alert engine running off `alert_rules`, watchlists, dashboards.
