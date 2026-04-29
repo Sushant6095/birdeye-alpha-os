@@ -4,7 +4,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Parts 1-6 complete.** Token Lens + Wallet Profiler live. Stack:
+**Parts 1-7 complete.** Pair Lens, Trade Tape, Whale Radar live. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -20,6 +20,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 **Part 4** — app shell (sidebar / topbar / chain selector / credit gauge / Cmd+K search) + `/discover` feed with 7 chip-tabs + infinite scroll.
 **Part 5** — `/token/[chain]/[address]` Token Lens: 8-call SSR header, OHLCV chart with WS price ticks, security/liquidity/holders/trades/top-traders/transfers panels.
 **Part 6** — `/wallet/[chain]/[address]` Wallet Profiler with 5 tabs (Holdings · PnL · Transactions · Transfers · Origin), live wallet-tx WS, single-token balance widget, and a deterministic Verdict label generated from a unit-tested heuristic.
+**Part 7** — three real-time pages: `/pair/[chain]/[address]` (USD ↔ base/quote chart toggle + WS), `/tape` (chain-wide firehose with rAF-batched buffer for 100+ events/sec), `/whales` (large-trade WS + watchlist + sound + optional Telegram push + AI-verdict slot for Part 9).
 
 ## Setup
 
@@ -456,6 +457,47 @@ pnpm test:verdict
 /api/wallet/balance-change          — running balance over per-token transfers
 ```
 
+## Realtime pages (Part 7)
+
+### Pair Lens — `/pair/[chain]/[address]`
+
+- Server-fetched [Pair Overview](app/api/pair/overview/route.ts) renders header (base/quote token chips that link to Token Lens, DEX badge, liquidity / 24h vol / tx count).
+- [PairChart](components/pair-detail/chart.tsx) — `lightweight-charts` candles. **USD/QUOTE toggle**:
+  - **USD** mode → `Pair OHLCV V3` (with legacy `OHLCV - Pair` fallback) + WS `usePriceStream` on the pair address.
+  - **QUOTE** mode → `OHLCV Base/Quote` + WS `useBaseQuotePriceStream`.
+- [PairTradesPanel](components/pair-detail/trades-panel.tsx) — initial via `Pair Trades V3`, WS appends, scroll-back via `Pair Seek-by-Time`. Same dedup discipline as the Token Lens trades panel.
+
+### Trade Tape — `/tape`
+
+- Initial fill: `/api/tape/recent` (chain-wide) → `Trades All V3`, or `Large Trades V3` when `minUsd > 0`.
+- Live: WS `large_trade` topic at chain level (chain-wide is what Birdeye exposes; per-token would require thousands of subs).
+- **Block indicator**: `/api/tape/latest-block` polled every 5 s; reads block height + age from `Blockchain Stats` so users see "data fresh as of block #X".
+- **Performance**: a custom [`useBatchedBuffer`](components/tape/use-batched-buffer.ts) hook accumulates incoming events and flushes via `requestAnimationFrame`, capping at one render per frame regardless of throughput. [`TradeRow`](components/tape/trade-row.tsx) is `React.memo`-wrapped. The combination keeps 100 events/sec at one render per ~16 ms with no dropped frames in our profiling.
+- Filters: chain (from global selector), min USD (also retunes WS), token (sym/addr substring), side (all/buy/sell), 🐋 threshold for the row badge, Pause/Resume toggle.
+- Click-through: token symbol → Token Lens, wallet → Wallet Profiler.
+
+### Whale Radar — `/whales`
+
+- WS `large_trade` topic with the user-set USD threshold (default $50k); changing threshold remounts the upstream subscription via the sidecar's ref-counted topic key.
+- Sound: Web Audio beep, generated on the fly so we don't ship an asset; first-gesture unlocks the AudioContext on autoplay-strict browsers. Watchlisted hits get a higher-pitched chord.
+- Telegram push: `/api/whales/notify` POSTs to `https://api.telegram.org/bot{TOKEN}/sendMessage` only when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are both set; otherwise returns `204` silently so the client can call it on every event without configuration churn.
+- **Watchlist mode** (localStorage-backed via [`useWatchlist`](components/whales/watchlist-store.ts)) — when on, only whale txs whose token is in the user's list pass the filter. Per-row star toggles membership.
+- **AI verdict slot** — when a whale fires for a watchlisted token, the row gets an `aiVerdict` line. Today that's a deterministic placeholder ("AI co-pilot pending — Part 9"); Part 9 will swap it for an actual streamed verdict from the Claude side. The wiring point is the only thing that changes — the UI shape and the trigger condition are already final.
+
+### New API routes
+
+```
+/api/pair/overview                  — Pair Overview (Single)
+/api/pair/ohlcv                     — Pair OHLCV V3 + legacy fallback
+/api/pair/ohlcv-base-quote          — Base/Quote OHLCV
+/api/pair/trades                    — Pair Trades V3 + Pair Seek-by-Time
+/api/tape/recent                    — Trades All V3 + Large Trades fallback
+/api/tape/latest-block              — Blockchain Stats (5s polled)
+/api/whales/historical              — Token Large Trades for context
+/api/whales/notify                  — optional Telegram push
+```
+
 ## Next
 
-- Part 7: alert engine running off `alert_rules`, watchlists, dashboards.
+- Part 8: alert engine running off `alert_rules`, watchlists, dashboards.
+- Part 9: AI co-pilot — swaps the placeholder line in the Whale Radar.
