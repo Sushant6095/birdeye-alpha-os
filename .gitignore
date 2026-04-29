@@ -10,3 +10,5 @@ next-env.d.ts
 .turbo
 dist
 .claude/
+services/*/dist/
+services/*/node_modules/

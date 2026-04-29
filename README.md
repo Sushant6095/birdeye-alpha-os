@@ -4,7 +4,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Parts 1-2 complete.** No UI yet. Stack:
+**Parts 1-3 complete.** No production UI yet — dev WS page only. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -16,6 +16,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 **Part 1** — typed Birdeye REST client, ~78 endpoints, 14 categories.
 **Part 2** — persistence layer + cached wrapper + credit tracking + health route.
+**Part 3** — WS sidecar (Hono + ws) → SSE bridge for all 9 Birdeye WebSocket streams + React hooks.
 
 ## Setup
 
@@ -55,6 +56,16 @@ lib/
 scripts/
   test-client.ts        end-to-end smoke against 5 endpoints
   db-migrate.ts         drizzle migrate runner
+services/
+  ws-sidecar/           standalone Node service — Birdeye WS → SSE
+    src/
+      index.ts          Hono server + SSE /sse/:topic
+      birdeye-ws.ts     per-chain WS manager (ref-counted, reconnects)
+      topics.ts         9 topic kinds + subscribe message builders
+      parse-topic.ts    query → TopicParams
+      log.ts            level-gated structured logger
+    Dockerfile          fly.io-ready container
+    fly.toml            fly app config
 ```
 
 ## Client features
@@ -233,7 +244,64 @@ GET /api/health
 
 Returns 200 when DB + cache + Birdeye are all reachable, 503 otherwise. Per-check latency and detail string for fast triage.
 
+## Realtime (Part 3)
+
+A standalone Node sidecar at [services/ws-sidecar/](services/ws-sidecar/) maintains persistent WebSocket connections to Birdeye and exposes them to the browser as SSE. Running it as a separate process means upstream WS reconnects can never crash the Next.js app.
+
+### Run
+
+```bash
+# terminal 1
+BIRDEYE_API_KEY=xxx pnpm --filter ws-sidecar dev      # tsx watch on :4001
+
+# terminal 2
+NEXT_PUBLIC_WS_SIDECAR_URL=http://localhost:4001 pnpm dev
+# open http://localhost:3000/_dev/ws
+```
+
+### SSE protocol
+
+```
+GET /sse/:topic?<params>&chain=solana
+```
+
+The sidecar opens (or reuses) one upstream Birdeye subscription per `(chain, topic-key)`, and reference-counts SSE clients on top of it. 100 browsers tailing `/sse/price?address=…&chain=solana` ⇒ **1** upstream Birdeye subscription. When the last browser disconnects, the sidecar sends `UNSUBSCRIBE_*` and frees the slot.
+
+| Topic              | Subscribe type             | Required params                | Hook                       |
+| ------------------ | -------------------------- | ------------------------------ | -------------------------- |
+| `price`            | `SUBSCRIBE_PRICE`          | `address` (`interval?`)        | `usePriceStream`           |
+| `txs`              | `SUBSCRIBE_TXS`            | `address`                      | `useTradeStream`           |
+| `base_quote_price` | `SUBSCRIBE_BASE_QUOTE_PRICE` | `base`, `quote`              | `useBaseQuotePriceStream`  |
+| `new_listing`      | `SUBSCRIBE_TOKEN_NEW_LISTING` | —                           | `useNewListingStream`      |
+| `new_pair`         | `SUBSCRIBE_NEW_PAIR`       | —                              | `useNewPairStream`         |
+| `large_trade`      | `SUBSCRIBE_LARGE_TRADE_TXS` | `minUsd?`                     | `useLargeTradeStream`      |
+| `wallet_txs`       | `SUBSCRIBE_WALLET_TXS`     | `address`                      | `useWalletTxStream`        |
+| `token_stats`      | `SUBSCRIBE_TOKEN_STATS`    | `address`                      | `useTokenStatsStream`      |
+| `meme_stats`       | `SUBSCRIBE_MEME_STATS`     | —                              | `useMemeStatsStream`       |
+
+Each hook returns `{ data, buffer, status, error, reconnect }`.
+
+### Reliability
+
+- **Reconnect**: exponential backoff (500 ms → 30 s + jitter). On reconnect, all live subscriptions are re-sent.
+- **Heartbeat**: `ws.ping()` every 30 s upstream; SSE comment ping every 25 s downstream.
+- **Late joiner replay**: a topic's last event is replayed to the next subscriber, so opening the page after the first tick shows the current value immediately.
+- **Cleanup**: when chain has zero subscriptions, the upstream WS is closed.
+
+### Deploy (Fly)
+
+```bash
+cd services/ws-sidecar
+fly launch --no-deploy --copy-config
+fly secrets set BIRDEYE_API_KEY=xxx
+fly deploy
+```
+
+## Dev UI
+
+`/_dev/ws` — pick any of the 9 topics, fill in params, watch events scroll. Useful for verifying end-to-end after touching anything WS-related.
+
 ## Next
 
-- Part 3: UI — terminal layout, charts, watchlist.
-- Part 4: alert engine running off `alert_rules`.
+- Part 4: production UI — terminal layout, charts, watchlist.
+- Part 5: alert engine running off `alert_rules`.
