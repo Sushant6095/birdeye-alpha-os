@@ -4,7 +4,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Parts 1-3 complete.** No production UI yet — dev WS page only. Stack:
+**Parts 1-4 complete.** Discover feed live. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -17,6 +17,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 **Part 1** — typed Birdeye REST client, ~78 endpoints, 14 categories.
 **Part 2** — persistence layer + cached wrapper + credit tracking + health route.
 **Part 3** — WS sidecar (Hono + ws) → SSE bridge for all 9 Birdeye WebSocket streams + React hooks.
+**Part 4** — app shell (sidebar / topbar / chain selector / credit gauge / Cmd+K search) + `/discover` feed with 7 chip-tabs + infinite scroll.
 
 ## Setup
 
@@ -301,7 +302,33 @@ fly deploy
 
 `/_dev/ws` — pick any of the 9 topics, fill in params, watch events scroll. Useful for verifying end-to-end after touching anything WS-related.
 
+> Folder is named `app/%5Fdev/ws/` so Next.js doesn't treat it as a private folder. The URL is `/_dev/ws`.
+
+## Discover (Part 4)
+
+`/discover` is the first user-facing surface. Chip filters across the top:
+
+| Chip               | Source                                     | Behavior                |
+| ------------------ | ------------------------------------------ | ----------------------- |
+| Trending           | `Token - Trending List`                    | offset+limit pagination |
+| New Listings       | `Token - List V3` sort by recent listing   | first page              |
+| Top Gainers        | `Token - List V3 Scroll` 24h % desc        | infinite scroll         |
+| Top Losers         | `Token - List V3 Scroll` 24h % asc         | infinite scroll         |
+| Smart Money Buys   | `Smart Money - Token List`                 | first page              |
+| Memes              | `Meme Token - List`                        | first page              |
+| By DEX             | `Token - All Market List` grouped by `source` | grouped section list |
+
+Each `TokenCard` shows logo, symbol, price, 24h % (green/red), SVG sparkline, 24h volume, market cap, and a 🧠 SM badge if smart money holds it. Clicks deep-link to `/token/[chain]/[address]` (target route lands in Part 5).
+
+### Topbar
+- Cmd/Ctrl+K → global search palette → `/api/search` → `Search - Token, market Data` (cached). Hits dispatch by type: token, pair, wallet.
+- Chain selector → `/api/chains` (`Supported Networks`) with localStorage persistence and a hardcoded fallback list if the upstream call fails.
+- Credit gauge → `/api/credits` reads `getCreditsUsedToday()` + last-seen `creditsLeft` from `credit_usage_log` (Part 2). Tone shifts amber > 70 %, red > 90 %.
+- Bot FAB lower right is a placeholder — wires up in Part 9.
+
+Data fetching: TanStack Query (`@tanstack/react-query`) with 30 s `staleTime`. Server route handlers (`app/api/discover/*`) call the Part 2 cached client, so identical requests within TTL serve from Redis/Postgres rather than burning credits.
+
 ## Next
 
-- Part 4: production UI — terminal layout, charts, watchlist.
-- Part 5: alert engine running off `alert_rules`.
+- Part 5: token / pair / wallet detail pages.
+- Part 6: alert engine running off `alert_rules`.
