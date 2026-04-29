@@ -4,7 +4,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 
 ## Status
 
-**Parts 1-4 complete.** Discover feed live. Stack:
+**Parts 1-5 complete.** Token Lens live. Stack:
 
 - Next.js 15 (App Router) + React 19
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -18,6 +18,7 @@ Onchain market intelligence terminal. Birdeye Data Services frontend.
 **Part 2** — persistence layer + cached wrapper + credit tracking + health route.
 **Part 3** — WS sidecar (Hono + ws) → SSE bridge for all 9 Birdeye WebSocket streams + React hooks.
 **Part 4** — app shell (sidebar / topbar / chain selector / credit gauge / Cmd+K search) + `/discover` feed with 7 chip-tabs + infinite scroll.
+**Part 5** — `/token/[chain]/[address]` Token Lens: 8-call SSR header, OHLCV chart with WS price ticks, security/liquidity/holders/trades/top-traders/transfers panels.
 
 ## Setup
 
@@ -328,7 +329,64 @@ Each `TokenCard` shows logo, symbol, price, 24h % (green/red), SVG sparkline, 24
 
 Data fetching: TanStack Query (`@tanstack/react-query`) with 30 s `staleTime`. Server route handlers (`app/api/discover/*`) call the Part 2 cached client, so identical requests within TTL serve from Redis/Postgres rather than burning credits.
 
+## Token Lens (Part 5)
+
+`/token/[chain]/[address]` — the data-richest screen.
+
+### Initial render — exactly 8 REST calls (server, parallel)
+
+[`loadTokenBundle`](components/token-detail/load-bundle.ts) fires `Promise.allSettled` over:
+
+1. Token Overview
+2. Token Security
+3. Market Data (Single)
+4. Trade Data (Single)
+5. All Time Trades (Single)
+6. Token Creation Info
+7. Token Metadata (Single)
+8. Token Trending (used to set the 🔥 badge if this token is in the list)
+
+Any failure degrades to `null` so a single dead endpoint doesn't kill the page. The cached client (Part 2) means the second person to load the same token in the TTL window pays zero CU.
+
+### Header (server-rendered)
+
+- Logo, symbol, name, chain badge, 🔥 trending badge if applicable.
+- [LivePriceTick](components/token-detail/live-price-tick.tsx) overlays the static price with `usePriceStream` and `useTokenStatsStream` (Part 3) — green/red flash on every tick, MCap and holder count tick live, "LIVE" pill when WS is open.
+- [SecurityBadges](components/token-detail/security-badges.tsx) — mint/freeze/owner status, top-10 % bucketed green / amber / red.
+- [MetadataRow](components/token-detail/metadata-row.tsx) — copyable address + socials (website, x, telegram, discord, coingecko).
+
+### Main column (client, lazy-fetched)
+
+- [DeployerStrip](components/token-detail/deployer-strip.tsx) — deployer / deploy time / tx hash from the SSR creation info.
+- [TokenChart](components/token-detail/chart.tsx) — `lightweight-charts` candles from `/api/token/ohlcv` (V3) with `Price - Historical` line fallback. Interval picker: 1m/5m/15m/1h/4h/1d. WS `usePriceStream` ticks update the in-progress candle without re-fetching REST.
+- [TradesPanel](components/token-detail/trades-panel.tsx) — initial fill from `Trades - Token (V3)`, live appends from the `txs` WS topic, "Whales only ≥ $10k" toggle hits `Trades - Token Filtered By Volume (V3)`, "Load older →" calls `Trades - Token Seek By Time` for scroll-back. Dedupes on `txHash`.
+- [TopTradersPanel](components/token-detail/top-traders-panel.tsx) — `Token - Top Traders` with 1h/4h/8h/24h selector; rows deep-link to `/wallet/[chain]/[address]`.
+- [TransfersPanel](components/token-detail/transfers-panel.tsx) — collapsed by default; on open, fetches `Token - Transfer List` (top 50) and shows the total count.
+- [MemePanel](components/token-detail/meme-panel.tsx) — only renders if the token's metadata tags include "meme"; tails `useMemeStatsStream`.
+
+### Right rail
+
+- [LiquidityGauge](components/token-detail/liquidity-gauge.tsx) — log-scaled bar with health verdict: ≥ $1M healthy, ≥ $100k cautious, < $100k risky.
+- [StatsPanel](components/token-detail/stats-panel.tsx) — MCap / FDV / liquidity / supply / holders, 1h/4h/8h/24h price-change row from `Price - Volume Single`, 24h volume + buy/sell ratio bar from `Token - Trade Data (Single)`, lifetime trades / volume from `All-Time Trades (Single)`.
+- [HoldersPanel](components/token-detail/holders-panel.tsx) — paginated top 100 holders + distribution bar; clicking a row opens [HolderDrawer](components/token-detail/holder-drawer.tsx) → `Wallet Token List` + `Wallet PnL Summary` with a deep-link to the Wallet Profiler (Part 6).
+
+### New API routes
+
+```
+/api/token/ohlcv               (V3 with /history_price fallback)
+/api/token/holders
+/api/token/holder-distribution
+/api/token/holder-positions    (wallet token list + 24h PnL)
+/api/token/trades              ?mode=recent|whales|seek
+/api/token/top-traders         ?time=1h|4h|8h|24h
+/api/token/transfers
+/api/token/price-stats         (parallel 1h/2h/4h/8h/24h)
+```
+
+### Multi-chain
+
+The `[chain]` segment is checked against the supported set; tokens on **Solana, Ethereum, Base** (plus the rest of the Birdeye list) all hit the same code path. Chain is forwarded to every cached call via `x-chain`.
+
 ## Next
 
-- Part 5: token / pair / wallet detail pages.
-- Part 6: alert engine running off `alert_rules`.
+- Part 6: wallet profiler + alert engine running off `alert_rules`.
