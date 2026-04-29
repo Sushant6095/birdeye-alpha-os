@@ -23,8 +23,6 @@ interface WhaleTx {
   base?: { address?: string; symbol?: string };
   quote?: { address?: string; symbol?: string };
   address?: string;
-  /** filled in client-side for watchlisted hits */
-  aiVerdict?: string;
 }
 
 const MAX = 50;
@@ -39,10 +37,16 @@ export function WhalesPage() {
 
   const { items, push, reset } = useBatchedBuffer<WhaleTx>(MAX);
   const seen = useRef<Set<string>>(new Set());
+  const aiCooldown = useRef<Map<string, number>>(new Map());
+  const [aiVerdicts, setAiVerdicts] = useState<Map<string, string>>(
+    () => new Map(),
+  );
 
   useEffect(() => {
     reset();
     seen.current.clear();
+    aiCooldown.current.clear();
+    setAiVerdicts(new Map());
   }, [chain, threshold, reset]);
 
   const stream = useLargeTradeStream(chain, threshold);
@@ -76,13 +80,35 @@ export function WhalesPage() {
     }
 
     if (isWatched && tokenAddr) {
-      // Killer feature — Part 9 wires the AI co-pilot. For now we surface a
-      // deterministic placeholder so the UI shape is in place; the prompt is
-      // still emitted to the network so observability is identical.
-      const placeholder = `🤖 AI co-pilot pending (Part 9) · whale ${t.side} ${t.base?.symbol ?? "—"} on ${chain}`;
-      // Patch the just-pushed row with the verdict
-      // (small race ok — items state will pick it up on next flush)
-      t.aiVerdict = placeholder;
+      // Cap to 1 AI call per token per 30s to control cost.
+      const tokenKey = tokenAddr.toLowerCase();
+      const last = aiCooldown.current.get(tokenKey) ?? 0;
+      const now = Date.now();
+      if (now - last >= 30_000) {
+        aiCooldown.current.set(tokenKey, now);
+        void fetch("/api/chat/quick-verdict", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            chain,
+            address: tokenAddr,
+            side: t.side,
+            volumeUsd: num(t.volumeUsd),
+            owner: t.owner,
+          }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((j: { verdict?: string | null } | null) => {
+            const verdict = j?.verdict;
+            if (!verdict) return;
+            setAiVerdicts((m) => {
+              const next = new Map(m);
+              next.set(tokenKey, verdict);
+              return next;
+            });
+          })
+          .catch(() => {});
+      }
     }
   }, [stream.data, chain, sound, telegram, watchOnly, watch, push, threshold]);
 
@@ -184,6 +210,14 @@ export function WhalesPage() {
               key={t.txHash ?? `${t.blockUnixTime}-${i}`}
               t={t}
               chain={chain}
+              aiVerdict={aiVerdicts.get(
+                (
+                  t.address ??
+                  t.base?.address ??
+                  t.quote?.address ??
+                  ""
+                ).toLowerCase(),
+              )}
               watched={watch.has(
                 chain,
                 t.address ?? t.base?.address ?? t.quote?.address ?? "",
@@ -220,11 +254,13 @@ function WhaleRow({
   chain,
   watched,
   onWatch,
+  aiVerdict,
 }: {
   t: WhaleTx;
   chain: string;
   watched: boolean;
   onWatch: () => void;
+  aiVerdict?: string;
 }) {
   const side = (t.side ?? "").toLowerCase();
   const positive = side === "buy";
@@ -277,9 +313,10 @@ function WhaleRow({
           🐋 {fmtUsd(num(t.volumeUsd))}
         </span>
       </div>
-      {t.aiVerdict && (
-        <p className="ml-12 mt-1 text-[10px] text-amber-300/80 font-sans">
-          {t.aiVerdict}
+      {aiVerdict && (
+        <p className="ml-12 mt-1 text-[10px] text-amber-300/90 font-sans inline-flex items-start gap-1">
+          <span aria-hidden>🤖</span>
+          <span>{aiVerdict}</span>
         </p>
       )}
     </li>
