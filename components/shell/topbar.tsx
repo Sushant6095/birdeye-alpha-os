@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { ChainSelector } from "./chain-selector";
 import { CreditGauge } from "./credit-gauge";
 import { SearchPalette } from "./search-palette";
+import { AlertsBell } from "@/components/alerts/alerts-bell";
 
 export function Topbar() {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -40,6 +41,7 @@ export function Topbar() {
         </button>
         <div className="flex-1" />
         <CreditGauge />
+        <AlertsBell />
         <ChainSelector />
       </header>
       <SearchPalette open={paletteOpen} setOpen={setPaletteOpen} />

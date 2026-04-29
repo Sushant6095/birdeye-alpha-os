@@ -6,6 +6,7 @@ import { WalletChainSelector } from "./wallet-chain-selector";
 import { fmtPct, fmtUsd, num, shortAddr } from "@/lib/format";
 import type { WalletBundle } from "./load-bundle";
 import { cn } from "@/lib/utils";
+import { AddToWatchlistButton } from "@/components/watchlist/add-button";
 
 export function WalletHeader({ bundle }: { bundle: WalletBundle }) {
   const realized = num(bundle.pnl?.realized_pnl) ?? num(bundle.pnl?.pnl) ?? 0;
@@ -35,6 +36,13 @@ export function WalletHeader({ bundle }: { bundle: WalletBundle }) {
               <WalletChainSelector
                 chain={bundle.chain}
                 wallet={bundle.wallet}
+              />
+              <AddToWatchlistButton
+                item={{
+                  chain: bundle.chain,
+                  address: bundle.wallet,
+                  kind: "wallet",
+                }}
               />
             </div>
             <div className="flex items-baseline gap-3 flex-wrap mt-1">

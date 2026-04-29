@@ -4,6 +4,7 @@ import { LivePriceTick } from "./live-price-tick";
 import { SecurityBadges } from "./security-badges";
 import { MetadataRow } from "./metadata-row";
 import type { InitialBundle } from "./types";
+import { AddToWatchlistButton } from "@/components/watchlist/add-button";
 
 export function TokenHeader({ bundle }: { bundle: InitialBundle }) {
   const { overview, security, meta, isTrending, chain, address } = bundle;
@@ -51,6 +52,15 @@ export function TokenHeader({ bundle }: { bundle: InitialBundle }) {
                   trending
                 </Badge>
               )}
+              <AddToWatchlistButton
+                item={{
+                  chain,
+                  address,
+                  symbol: sym,
+                  kind: "token",
+                }}
+                className="ml-1"
+              />
             </div>
             <div className="mt-2">
               <LivePriceTick
