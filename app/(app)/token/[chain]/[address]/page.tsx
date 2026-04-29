@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { TokenHeader } from "@/components/token-detail/header";
-import { TokenChart } from "@/components/token-detail/chart";
+import { TokenChart } from "@/components/token-detail/chart-lazy";
 import { StatsPanel } from "@/components/token-detail/stats-panel";
 import { HoldersPanel } from "@/components/token-detail/holders-panel";
 import { TradesPanel } from "@/components/token-detail/trades-panel";

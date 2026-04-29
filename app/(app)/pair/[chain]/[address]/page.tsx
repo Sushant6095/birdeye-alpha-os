@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PairHeader } from "@/components/pair-detail/header";
-import { PairChart } from "@/components/pair-detail/chart";
+import { PairChart } from "@/components/pair-detail/chart-lazy";
 import { PairTradesPanel } from "@/components/pair-detail/trades-panel";
 import { loadPairBundle } from "@/components/pair-detail/load-bundle";
 

@@ -6,6 +6,7 @@ import { ChainProvider } from "@/components/providers/chain-provider";
 import { UserProvider } from "@/components/providers/user-provider";
 import { AlertEngine } from "@/components/alerts/alert-engine";
 import { ToastHost } from "@/components/alerts/toast-host";
+import { RateLimitWatcher } from "@/components/alerts/rate-limit-watcher";
 import { ChatProvider } from "@/components/chat/chat-context";
 import { ChatPanel } from "@/components/chat/chat-panel";
 
@@ -29,6 +30,7 @@ export default function AppLayout({
                 <ChatFab />
                 <ChatPanel />
                 <AlertEngine />
+                <RateLimitWatcher />
               </div>
             </ToastHost>
           </ChatProvider>
