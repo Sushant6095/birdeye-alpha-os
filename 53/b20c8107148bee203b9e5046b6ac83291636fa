@@ -1,0 +1,35 @@
+components/shell/chain-selector.tsx
+  ea4404a8734a4b35 54-55,63,101,114
+app/globals.css
+  ea4404a8734a4b35 8,10-12,14-20,23-27,121-131,136-141
+app/page.tsx
+  ea4404a8734a4b35 137-138,221,243-244,248,277,291,334,380
+components/shell/sidebar.tsx
+  ea4404a8734a4b35 55,60,65,74
+components/ui/error-state.tsx
+  ea4404a8734a4b35 33,35
+components/landing/orb.tsx
+  ea4404a8734a4b35 3-12,15-18,21-24,28-31,38-42,44-45,48-49,53-72,74-81,84-125,129-148
+components/landing/chain-badge.tsx
+  ea4404a8734a4b35 27,69-70,73,79,82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "53b20c8107148bee203b9e5046b6ac83291636fa",
+  "prompts": {
+    "ea4404a8734a4b35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9ed9d62-f50c-4338-853c-a49936e431c0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "sushant",
+      "messages": [],
+      "total_additions": 182,
+      "total_deletions": 108,
+      "accepted_lines": 182,
+      "overriden_lines": 0
+    }
+  }
+}
