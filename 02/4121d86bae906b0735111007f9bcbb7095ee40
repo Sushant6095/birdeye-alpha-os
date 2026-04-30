@@ -1,0 +1,23 @@
+README.md
+  ea4404a8734a4b35 1,3,5,7,9-13,15,17-29,32-43,45,48-64,67-68,71-74,77-125,127-137,139-230,233,235,237,239-251,253,255-411,496,498-499,503-504,508-509,512,514,516,521,524,529,531,533,535,537,539,541
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "024121d86bae906b0735111007f9bcbb7095ee40",
+  "prompts": {
+    "ea4404a8734a4b35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9ed9d62-f50c-4338-853c-a49936e431c0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "sushant",
+      "messages": [],
+      "total_additions": 404,
+      "total_deletions": 122,
+      "accepted_lines": 404,
+      "overriden_lines": 0
+    }
+  }
+}
