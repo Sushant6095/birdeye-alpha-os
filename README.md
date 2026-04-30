@@ -9,7 +9,7 @@
 - **11 user-facing surfaces** — Discover, Token Lens, Pair Lens, Wallet Profiler, Trade Tape, Whale Radar, Memescope, Compare, Watchlists, Alerts (rules + history), AI Co-pilot.
 - **79 typed REST endpoints** behind a cached client (Redis ➜ Postgres fallback) with credit-cost tracking per call and per user.
 - **9 WebSocket topics** multiplexed by a standalone Hono+ws sidecar that fans out to browsers via SSE with reference-counted upstream subscriptions.
-- **AI co-pilot** — Claude Sonnet 4.6 via Vercel AI SDK with all 79 endpoints registered as tools, custom-tag streaming output (`<chart/>`, `<holders/>`, `<wallet-card/>`, `<verdict/>`), and a one-shot Whale Radar auto-prompt.
+- **AI co-pilot** — frontier LLM via Vercel AI SDK with all 79 endpoints registered as tools, custom-tag streaming output (`<chart/>`, `<holders/>`, `<wallet-card/>`, `<verdict/>`), and a one-shot Whale Radar auto-prompt.
 - **Deterministic Wallet Verdict** — pure function, 11/11 unit-tested, classifies wallets into Alpha Trader / Sniper Bot / Hodler / Exit Liquidity / etc.
 - **Watchlists + alert engine** — wallet activity, new listings, new pairs, whale-on-watchlist, token-stat thresholds. Toasts in-app, optional Telegram.
 
@@ -65,14 +65,14 @@ flowchart LR
     subgraph "External"
       Birdeye["Birdeye Data Services\nREST + WS"]
       Redis[(Upstash Redis)]
-      Anthropic[Claude Sonnet 4.6]
+      LLM[Frontier LLM]
     end
 
     UI -->|fetch| API
     UI -. EventSource .-> Sidecar
     API --> Cached
     Chat -->|/api/chat| API
-    API -->|streamText + tools| Anthropic
+    API -->|streamText + tools| LLM
     Tools --> Cached
     Cached -->|hit| Redis
     Cached -->|miss / fallback| DB
@@ -209,7 +209,7 @@ flowchart LR
 ## Stack
 
 - **Web** — Next.js 15 App Router, React 19, TypeScript strict (`noUncheckedIndexedAccess`), Tailwind 3, shadcn-style primitives, TanStack Query, lightweight-charts (lazy), cmdk.
-- **AI** — Claude Sonnet 4.6 via `@ai-sdk/anthropic@3` + `@ai-sdk/react@3` + `ai@6`.
+- **AI** — frontier LLM via Vercel AI SDK (`@ai-sdk/react@3` + `ai@6`).
 - **Data** — Drizzle ORM + Neon Postgres (HTTP), Upstash Redis (REST), Postgres `cached_responses` fallback.
 - **Realtime** — `services/ws-sidecar/` Hono + `ws`, deployed independently.
 - **DX** — pnpm workspaces, native `node:test` for verdict, `tsx` for scripts, `drizzle-kit` for migrations.
