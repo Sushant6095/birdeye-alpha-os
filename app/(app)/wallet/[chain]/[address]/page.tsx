@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { checkWalletAddress } from "@/lib/api/address";
+import { ErrorState } from "@/components/ui/error-state";
 import { WalletHeader } from "@/components/wallet-detail/header";
 import { WalletTabs } from "@/components/wallet-detail/tabs";
 import { SideBalanceWidget } from "@/components/wallet-detail/side-balance-widget";
@@ -39,6 +41,25 @@ export default async function WalletPage({
   const { chain, address } = await params;
   if (!SUPPORTED.has(chain)) notFound();
   if (!address || address.length < 6) notFound();
+
+  const check = checkWalletAddress(chain, address);
+  if (!check.ok) {
+    const suggested = check.suggestedChain;
+    return (
+      <ErrorState
+        title="Wallet address doesn't match this chain"
+        message={check.reason ?? "URL chain and address format don't agree."}
+        hint={
+          suggested
+            ? `Try /wallet/${suggested}/${address}`
+            : "Pick the right chain and try again."
+        }
+        detail={`URL chain: ${chain}\nAddress:   ${address}\nExpected:  ${check.expected}`}
+        primaryHref={suggested ? `/wallet/${suggested}/${address}` : "/discover"}
+        primaryLabel={suggested ? `Open on ${suggested}` : "Back to Discover"}
+      />
+    );
+  }
 
   const bundle = await loadWalletBundle(chain, address);
 

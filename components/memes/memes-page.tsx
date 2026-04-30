@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/ui/sparkline";
 import { fmtCount, fmtPct, fmtUsd, fmtTimeAgo, num, shortAddr } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api/client-fetch";
 
 interface MemeRow {
   address?: string;
@@ -55,9 +56,10 @@ export function MemesPage() {
         limit: "30",
         ...(source !== "all" ? { source } : {}),
       });
-      const r = await fetch(`/api/memes/list?${usp}`);
-      if (!r.ok) throw new Error(`memes ${r.status}`);
-      return r.json();
+      return apiFetch<{ data: { items?: MemeRow[] } }>(
+        `/api/memes/list?${usp}`,
+        { toastTitle: `Couldn't load Memescope on ${chain}` },
+      );
     },
     refetchInterval: 30_000,
     staleTime: 15_000,

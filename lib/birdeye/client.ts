@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { makeLogger } from "@/lib/log";
 import {
   type BirdeyeChain,
   BirdeyeChainSchema,
   DEFAULT_CHAIN,
 } from "./types/chain";
+
+const blog = makeLogger("birdeye");
 
 const DEFAULT_BASE_URL = "https://public-api.birdeye.so";
 
@@ -136,17 +139,20 @@ interface DebugLog {
 }
 
 function log(entry: DebugLog) {
-  const cfg = cachedConfig;
-  if (!cfg?.debug) return;
-  const cu =
-    entry.cuConsumed != null
-      ? ` cu=${entry.cuConsumed}${entry.cuLeft != null ? `/${entry.cuLeft}` : ""}`
-      : "";
-  const retry = entry.retry ? ` retry=${entry.retry}` : "";
-  // eslint-disable-next-line no-console
-  console.log(
-    `[birdeye] ${entry.method} ${entry.endpoint} chain=${entry.chain} status=${entry.status} ${entry.durationMs}ms${cu}${retry}`,
-  );
+  const fields: Record<string, unknown> = {
+    method: entry.method,
+    chain: entry.chain,
+    status: entry.status,
+    ms: entry.durationMs,
+  };
+  if (entry.cuConsumed != null) fields.cu = entry.cuConsumed;
+  if (entry.cuLeft != null) fields.cuLeft = entry.cuLeft;
+  if (entry.retry) fields.retry = entry.retry;
+
+  const tag = `${entry.method} ${entry.endpoint}`;
+  if (entry.status >= 500) blog.error(tag, fields);
+  else if (entry.status === 429 || entry.status >= 400) blog.warn(tag, fields);
+  else blog.debug(tag, fields);
 }
 
 /* -------------------- credit observer hook -------------------- */

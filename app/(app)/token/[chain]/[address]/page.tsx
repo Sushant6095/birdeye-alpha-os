@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { checkAddress } from "@/lib/api/address";
+import { ErrorState } from "@/components/ui/error-state";
 import { TokenHeader } from "@/components/token-detail/header";
 import { TokenChart } from "@/components/token-detail/chart-lazy";
 import { StatsPanel } from "@/components/token-detail/stats-panel";
@@ -47,6 +49,26 @@ export default async function TokenPage({
   const { chain, address } = await params;
   if (!SUPPORTED.has(chain)) notFound();
   if (!address || address.length < 6) notFound();
+
+  // Short-circuit chain ↔ address mismatches before hitting Birdeye 8 times.
+  const check = checkAddress(chain, address);
+  if (!check.ok) {
+    const suggested = check.suggestedChain;
+    return (
+      <ErrorState
+        title="Address doesn't match this chain"
+        message={check.reason ?? "URL chain and address format don't agree."}
+        hint={
+          suggested
+            ? `Try /token/${suggested}/${address}`
+            : "Pick the right chain in the selector and search again."
+        }
+        detail={`URL chain: ${chain}\nAddress:   ${address}\nExpected:  ${check.expected}`}
+        primaryHref={suggested ? `/token/${suggested}/${address}` : "/discover"}
+        primaryLabel={suggested ? `Open on ${suggested}` : "Back to Discover"}
+      />
+    );
+  }
 
   const bundle = await loadTokenBundle(chain, address);
   const isMeme = looksLikeMeme(bundle);

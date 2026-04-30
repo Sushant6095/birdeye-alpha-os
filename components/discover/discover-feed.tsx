@@ -10,6 +10,7 @@ import { useChain } from "@/components/providers/chain-provider";
 import { TokenCard, type TokenLike } from "@/components/token/token-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api/client-fetch";
 import {
   nextCursorFromPayload,
   tokensFromPayload,
@@ -69,6 +70,10 @@ interface PageResponse {
   mode?: "scroll" | "page";
 }
 
+function tabLabel(tab: DiscoverTab): string {
+  return TABS.find((t) => t.id === tab)?.label ?? tab;
+}
+
 async function fetchPage(
   tab: DiscoverTab,
   chain: string,
@@ -78,12 +83,9 @@ async function fetchPage(
   if (param.cursor) usp.set("cursor", param.cursor);
   if (param.offset != null) usp.set("offset", String(param.offset));
   if (param.limit != null) usp.set("limit", String(param.limit));
-  const r = await fetch(`${endpointFor(tab)}?${usp.toString()}`);
-  if (!r.ok) {
-    const j = (await r.json().catch(() => ({}))) as { error?: string };
-    throw new Error(j.error ?? `HTTP ${r.status}`);
-  }
-  return (await r.json()) as PageResponse;
+  return apiFetch<PageResponse>(`${endpointFor(tab)}?${usp.toString()}`, {
+    toastTitle: `Couldn't load ${tabLabel(tab)} on ${chain}`,
+  });
 }
 
 /* ----------------------- views ----------------------- */

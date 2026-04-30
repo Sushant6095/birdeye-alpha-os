@@ -35,6 +35,24 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Listen for cross-component chain switch requests (e.g. from toast actions).
+  useEffect(() => {
+    function onSwitch(e: Event) {
+      const ce = e as CustomEvent<{ chain?: string }>;
+      const next = ce.detail?.chain;
+      if (typeof next === "string" && next.length > 0) {
+        setChainState(next);
+        try {
+          window.localStorage.setItem(STORAGE_KEY, next);
+        } catch {
+          /* swallow */
+        }
+      }
+    }
+    window.addEventListener("alphaos:switch-chain", onSwitch);
+    return () => window.removeEventListener("alphaos:switch-chain", onSwitch);
+  }, []);
+
   // load available chains
   useEffect(() => {
     let cancelled = false;
