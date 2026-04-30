@@ -1,19 +1,22 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const CHAIN_META: Record<
   string,
-  { label: string; symbol: string; color: string }
+  { label: string; symbol: string; color: string; slug: string }
 > = {
-  solana:    { label: "Solana",    symbol: "SOL",  color: "from-violet-400 to-fuchsia-500" },
-  ethereum:  { label: "Ethereum",  symbol: "ETH",  color: "from-sky-400 to-indigo-500" },
-  base:      { label: "Base",      symbol: "BASE", color: "from-blue-400 to-blue-600" },
-  arbitrum:  { label: "Arbitrum",  symbol: "ARB",  color: "from-cyan-400 to-blue-500" },
-  optimism:  { label: "Optimism",  symbol: "OP",   color: "from-rose-400 to-red-500" },
-  polygon:   { label: "Polygon",   symbol: "MATIC",color: "from-purple-400 to-violet-600" },
-  avalanche: { label: "Avalanche", symbol: "AVAX", color: "from-rose-400 to-red-600" },
-  bsc:       { label: "BSC",       symbol: "BNB",  color: "from-yellow-400 to-amber-500" },
-  zksync:    { label: "zkSync",    symbol: "ZK",   color: "from-zinc-300 to-zinc-500" },
-  sui:       { label: "Sui",       symbol: "SUI",  color: "from-cyan-300 to-sky-500" },
+  solana:    { label: "Solana",    symbol: "SOL",   color: "from-violet-400 to-fuchsia-500", slug: "solana" },
+  ethereum:  { label: "Ethereum",  symbol: "ETH",   color: "from-sky-400 to-indigo-500",     slug: "ethereum" },
+  base:      { label: "Base",      symbol: "BASE",  color: "from-blue-400 to-blue-600",      slug: "base" },
+  arbitrum:  { label: "Arbitrum",  symbol: "ARB",   color: "from-cyan-400 to-blue-500",      slug: "arbitrum" },
+  optimism:  { label: "Optimism",  symbol: "OP",    color: "from-rose-400 to-red-500",       slug: "optimism" },
+  polygon:   { label: "Polygon",   symbol: "MATIC", color: "from-purple-400 to-violet-600",  slug: "polygon" },
+  avalanche: { label: "Avalanche", symbol: "AVAX",  color: "from-rose-400 to-red-600",       slug: "avalanche" },
+  bsc:       { label: "BSC",       symbol: "BNB",   color: "from-yellow-400 to-amber-500",   slug: "bsc" },
+  zksync:    { label: "zkSync",    symbol: "ZK",    color: "from-zinc-300 to-zinc-500",      slug: "zksync-era" },
+  sui:       { label: "Sui",       symbol: "SUI",   color: "from-cyan-300 to-sky-500",       slug: "sui" },
 };
 
 export function getChainMeta(chain: string) {
@@ -22,8 +25,14 @@ export function getChainMeta(chain: string) {
       label: chain,
       symbol: chain.slice(0, 3).toUpperCase(),
       color: "from-emerald-300 to-emerald-500",
+      slug: chain.toLowerCase(),
     }
   );
+}
+
+function logoUrl(slug: string) {
+  // DefiLlama maintains a chain-icon registry that covers every chain we use.
+  return `https://icons.llamao.fi/icons/chains/rsz_${slug}?w=64&h=64`;
 }
 
 export function ChainBadge({
@@ -36,22 +45,40 @@ export function ChainBadge({
   className?: string;
 }) {
   const meta = getChainMeta(chain);
+  const [errored, setErrored] = useState(false);
+
   const dim =
     size === "sm" ? "h-6 w-6 text-[10px]" :
     size === "lg" ? "h-12 w-12 text-base" :
     "h-9 w-9 text-xs";
+
+  const base =
+    "inline-flex items-center justify-center rounded-full font-bold tracking-tight ring-1 ring-white/10 overflow-hidden";
+
+  if (errored) {
+    return (
+      <span
+        className={cn(base, "bg-gradient-to-br text-black/80", meta.color, dim, className)}
+        title={meta.label}
+      >
+        {meta.symbol.slice(0, 3)}
+      </span>
+    );
+  }
+
   return (
     <span
-      className={cn(
-        "inline-flex items-center justify-center rounded-full font-bold tracking-tight text-black/80 ring-1 ring-white/20",
-        "bg-gradient-to-br",
-        meta.color,
-        dim,
-        className,
-      )}
+      className={cn(base, "bg-secondary/40", dim, className)}
       title={meta.label}
     >
-      {meta.symbol.slice(0, 3)}
+      <img
+        src={logoUrl(meta.slug)}
+        alt={meta.label}
+        loading="lazy"
+        decoding="async"
+        onError={() => setErrored(true)}
+        className="h-full w-full object-cover"
+      />
     </span>
   );
 }
