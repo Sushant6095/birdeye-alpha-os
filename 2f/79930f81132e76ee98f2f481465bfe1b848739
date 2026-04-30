@@ -1,0 +1,51 @@
+lib/api/error.ts
+  ea4404a8734a4b35 1-240
+lib/log.ts
+  ea4404a8734a4b35 1-107
+lib/birdeye/client.ts
+  ea4404a8734a4b35 2,9-10,142-155
+lib/api/client-fetch.ts
+  ea4404a8734a4b35 1-118
+lib/api/address.ts
+  ea4404a8734a4b35 1-103
+components/discover/discover-feed.tsx
+  ea4404a8734a4b35 13,73-76,86-88
+package.json
+  ea4404a8734a4b35 38
+app/(app)/token/[chain]/[address]/page.tsx
+  ea4404a8734a4b35 2-3,53-72
+components/providers/chain-provider.tsx
+  ea4404a8734a4b35 38-55
+lib/api/route-helpers.ts
+  ea4404a8734a4b35 3-4,7-10,12-13,39-87
+components/providers/toaster.tsx
+  ea4404a8734a4b35 1-35
+components/ui/error-state.tsx
+  ea4404a8734a4b35 1-59
+app/(app)/wallet/[chain]/[address]/page.tsx
+  ea4404a8734a4b35 2-3,45-63
+app/layout.tsx
+  ea4404a8734a4b35 4,36
+components/memes/memes-page.tsx
+  ea4404a8734a4b35 13,59-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "2f79930f81132e76ee98f2f481465bfe1b848739",
+  "prompts": {
+    "ea4404a8734a4b35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9ed9d62-f50c-4338-853c-a49936e431c0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "sushant",
+      "messages": [],
+      "total_additions": 814,
+      "total_deletions": 31,
+      "accepted_lines": 814,
+      "overriden_lines": 0
+    }
+  }
+}
