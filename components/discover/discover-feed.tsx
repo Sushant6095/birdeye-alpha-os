@@ -104,18 +104,20 @@ function InfiniteList({
   >({
     queryKey: ["discover", tab, chain],
     initialPageParam: { offset: 0 },
-    queryFn: ({ pageParam }) =>
-      fetchPage(tab, chain, { ...pageParam, limit: 30 }),
+    queryFn: ({ pageParam }) => {
+      const limit = tab === "trending" ? 20 : 30;
+      return fetchPage(tab, chain, { ...pageParam, limit });
+    },
     getNextPageParam: (last, allPages) => {
       const cursor = nextCursorFromPayload(last.data);
       if (cursor) return { cursor };
-      // fall back to offset-based pagination
+      const pageSize = tab === "trending" ? 20 : 30;
       const total = allPages.reduce(
         (n, p) => n + tokensFromPayload(p.data).length,
         0,
       );
       const lastBatch = tokensFromPayload(last.data).length;
-      if (lastBatch < 30) return undefined;
+      if (lastBatch < pageSize) return undefined;
       return { offset: total };
     },
   });
