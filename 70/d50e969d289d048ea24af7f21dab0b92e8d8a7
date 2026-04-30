@@ -1,0 +1,27 @@
+components/token-detail/skeletons.tsx
+  ea4404a8734a4b35 1-76
+components/token-detail/slots.tsx
+  ea4404a8734a4b35 1-200
+app/(app)/token/[chain]/[address]/page.tsx
+  ea4404a8734a4b35 2,10-33,71,91-121,125-138,142-145,147-148,152-159,162-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "70d50e969d289d048ea24af7f21dab0b92e8d8a7",
+  "prompts": {
+    "ea4404a8734a4b35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9ed9d62-f50c-4338-853c-a49936e431c0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "sushant",
+      "messages": [],
+      "total_additions": 406,
+      "total_deletions": 59,
+      "accepted_lines": 373,
+      "overriden_lines": 0
+    }
+  }
+}
