@@ -1,0 +1,27 @@
+app/apple-icon.tsx
+  ea4404a8734a4b35 1-30
+app/icon.tsx
+  ea4404a8734a4b35 1-31
+lib/api/address.ts
+  ea4404a8734a4b35 37-45,49,52,58-59,62,67-68,76-77,80-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "0709b2a66e811282682b1707f68501de2cdb3c7f",
+  "prompts": {
+    "ea4404a8734a4b35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9ed9d62-f50c-4338-853c-a49936e431c0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "sushant",
+      "messages": [],
+      "total_additions": 83,
+      "total_deletions": 36,
+      "accepted_lines": 83,
+      "overriden_lines": 0
+    }
+  }
+}
