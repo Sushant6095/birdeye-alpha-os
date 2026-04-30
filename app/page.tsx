@@ -134,8 +134,8 @@ export default function LandingPage() {
           <div className="fade-in-up">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-3 py-1 text-xs">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-400" />
               </span>
               <span className="text-muted-foreground">
                 Live on 10 chains · 79 endpoints · 9 WebSocket streams
@@ -218,7 +218,7 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-24">
         <div className="mb-12 max-w-2xl">
-          <div className="text-[11px] uppercase tracking-[.2em] text-emerald-400/80">
+          <div className="text-[11px] uppercase tracking-[.2em] text-sky-400/80">
             Surfaces
           </div>
           <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">
@@ -240,12 +240,12 @@ export default function LandingPage() {
               href={f.href}
               className={`group surface surface-hover relative flex flex-col gap-3 rounded-xl p-5 fade-in-up stagger-${(i % 5) + 1}`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary/40 transition-colors group-hover:border-emerald-400/40 group-hover:bg-emerald-400/10">
-                <f.icon className="h-5 w-5 text-emerald-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary/40 transition-colors group-hover:border-sky-400/40 group-hover:bg-sky-400/10">
+                <f.icon className="h-5 w-5 text-sky-400" />
               </div>
               <div className="text-base font-semibold">{f.title}</div>
               <div className="text-sm text-muted-foreground">{f.desc}</div>
-              <div className="mt-auto flex items-center gap-1 pt-2 text-xs font-medium text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="mt-auto flex items-center gap-1 pt-2 text-xs font-medium text-sky-400 opacity-0 transition-opacity group-hover:opacity-100">
                 Open <ArrowRight className="h-3.5 w-3.5" />
               </div>
             </Link>
@@ -274,7 +274,7 @@ export default function LandingPage() {
           ].map((b) => (
             <div key={b.title} className="bg-background p-8">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary/40">
-                <b.icon className="h-5 w-5 text-emerald-400" />
+                <b.icon className="h-5 w-5 text-sky-400" />
               </div>
               <div className="mt-4 text-lg font-semibold">{b.title}</div>
               <div className="mt-2 text-sm text-muted-foreground">{b.desc}</div>
@@ -288,7 +288,7 @@ export default function LandingPage() {
           <div aria-hidden className="absolute inset-0 grid-bg-soft opacity-30" />
           <div className="relative grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs text-sky-300">
                 <Sparkles className="h-3.5 w-3.5" />
                 AI Co-pilot
               </div>
@@ -331,7 +331,7 @@ export default function LandingPage() {
                   <span
                     className={
                       line.kind === "tool"
-                        ? "rounded px-1.5 py-0.5 text-[10px] font-bold text-emerald-300 bg-emerald-400/10 ring-1 ring-emerald-400/30"
+                        ? "rounded px-1.5 py-0.5 text-[10px] font-bold text-sky-300 bg-sky-400/10 ring-1 ring-sky-400/30"
                         : "rounded px-1.5 py-0.5 text-[10px] font-bold text-fuchsia-300 bg-fuchsia-400/10 ring-1 ring-fuchsia-400/30"
                     }
                   >
@@ -377,7 +377,7 @@ export default function LandingPage() {
             Built end-to-end on{" "}
             <a
               href="https://bds.birdeye.so"
-              className="text-emerald-400 hover:underline"
+              className="text-sky-400 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >

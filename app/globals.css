@@ -5,25 +5,26 @@
 @layer base {
   :root {
     /* AlphaOS brand — mint on near-black */
-    --background: 220 13% 4%;
+    --background: 222 30% 5%;
     --foreground: 210 20% 98%;
-    --primary: 152 100% 50%;
-    --primary-foreground: 152 100% 8%;
-    --secondary: 220 13% 9%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 222 28% 10%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 220 13% 11%;
-    --muted-foreground: 215 16% 60%;
-    --accent: 152 100% 50%;
-    --accent-foreground: 152 100% 8%;
-    --border: 220 13% 14%;
-    --input: 220 13% 14%;
-    --ring: 152 100% 50%;
+    --muted: 222 28% 12%;
+    --muted-foreground: 215 16% 62%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 8%;
+    --border: 222 28% 16%;
+    --input: 222 28% 16%;
+    --ring: 199 89% 48%;
     --radius: 0.6rem;
 
-    --brand-mint: 152 100% 50%;
-    --brand-mint-soft: 152 100% 70%;
-    --brand-glow: 152 100% 50%;
-    --brand-grid: 220 13% 14%;
+    /* Brand: Electric Blue (Stripe / Linear) */
+    --brand-mint: 199 89% 48%;       /* #0EA5E9 — kept var name for backward compat */
+    --brand-mint-soft: 199 89% 68%;
+    --brand-glow: 199 89% 55%;
+    --brand-grid: 222 28% 16%;
   }
   html { color-scheme: dark; }
 }
@@ -117,11 +118,27 @@
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: .55; transform: scale(0.85); }
   }
-  .orb-rotate { animation: orb-rotate 32s linear infinite; }
-  .orb-rotate-rev { animation: orb-rotate 48s linear infinite reverse; }
+  /* Solar-system orbits — three rings with different speeds + directions. */
+  .orb-r1 { animation: orb-rotate 28s linear infinite; }              /* inner, fastest */
+  .orb-r2 { animation: orb-rotate 44s linear infinite reverse; }      /* middle, reverse */
+  .orb-r3 { animation: orb-rotate 64s linear infinite; }              /* outer, slow */
+
+  /* Counter-rotation matches each ring's speed/direction so the chain
+   * badge stays upright as the orbit rotates. */
+  .orb-r1-counter { animation: orb-rotate 28s linear infinite reverse; }
+  .orb-r2-counter { animation: orb-rotate 44s linear infinite; }
+  .orb-r3-counter { animation: orb-rotate 64s linear infinite reverse; }
+
   @keyframes orb-rotate {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
+  }
+
+  /* Slow pulse for the central sun. */
+  .sun-pulse { animation: sun-pulse 4s ease-in-out infinite; }
+  @keyframes sun-pulse {
+    0%, 100% { transform: scale(1);   filter: brightness(1); }
+    50%      { transform: scale(1.05); filter: brightness(1.25); }
   }
   .float-y { animation: float-y 6s ease-in-out infinite; }
   @keyframes float-y {

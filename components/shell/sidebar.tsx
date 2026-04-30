@@ -52,17 +52,17 @@ export function Sidebar() {
               className={cn(
                 "group/nav relative flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-all",
                 active
-                  ? "bg-emerald-400/10 text-foreground"
+                  ? "bg-sky-400/10 text-foreground"
                   : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
               )}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-emerald-400 shadow-[0_0_12px_2px_hsl(var(--brand-mint))]" />
+                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-sky-400 shadow-[0_0_12px_2px_hsl(var(--brand-mint))]" />
               )}
               <Icon
                 className={cn(
                   "h-4 w-4 transition-colors",
-                  active ? "text-emerald-400" : "text-muted-foreground group-hover/nav:text-foreground",
+                  active ? "text-sky-400" : "text-muted-foreground group-hover/nav:text-foreground",
                 )}
               />
               <span>{item.label}</span>
@@ -71,7 +71,7 @@ export function Sidebar() {
         })}
       </nav>
       <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/70 border-t border-border">
-        <span className="text-emerald-400/80">●</span> v0.1 · Birdeye
+        <span className="text-sky-400/80">●</span> v0.1 · Birdeye
       </div>
     </aside>
   );

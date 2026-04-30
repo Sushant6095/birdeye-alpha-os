@@ -51,8 +51,8 @@ export function ChainSelector() {
         className={cn(
           "group flex h-9 items-center gap-2 rounded-lg border bg-secondary/40 px-2 pr-2.5 text-sm transition-all",
           open
-            ? "border-emerald-400/50 bg-secondary glow-mint-sm"
-            : "border-border hover:border-emerald-400/30 hover:bg-secondary",
+            ? "border-sky-400/50 bg-secondary glow-mint-sm"
+            : "border-border hover:border-sky-400/30 hover:bg-secondary",
         )}
       >
         <ChainBadge chain={chain} size="sm" />
@@ -60,7 +60,7 @@ export function ChainSelector() {
         <ChevronDown
           className={cn(
             "h-3.5 w-3.5 text-muted-foreground transition-transform",
-            open && "rotate-180 text-emerald-400",
+            open && "rotate-180 text-sky-400",
           )}
         />
       </button>
@@ -98,7 +98,7 @@ export function ChainSelector() {
                     className={cn(
                       "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
                       active
-                        ? "bg-emerald-400/10 text-emerald-300"
+                        ? "bg-sky-400/10 text-sky-300"
                         : "hover:bg-secondary",
                     )}
                   >
@@ -111,7 +111,7 @@ export function ChainSelector() {
                         </span>
                       </div>
                     </div>
-                    {active && <Check className="h-4 w-4 text-emerald-400" />}
+                    {active && <Check className="h-4 w-4 text-sky-400" />}
                   </button>
                 );
               })

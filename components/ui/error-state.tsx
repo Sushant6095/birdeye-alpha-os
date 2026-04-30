@@ -30,9 +30,9 @@ export function ErrorState({
       <h1 className="mt-6 text-2xl font-bold tracking-tight">{title}</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
       {hint && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300">
+        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1.5 text-xs text-sky-300">
           <span className="font-semibold uppercase tracking-wider">Try this</span>
-          <span className="text-emerald-100">{hint}</span>
+          <span className="text-sky-100">{hint}</span>
         </div>
       )}
       {detail && (

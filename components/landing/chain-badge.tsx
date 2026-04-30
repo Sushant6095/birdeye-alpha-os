@@ -24,7 +24,7 @@ export function getChainMeta(chain: string) {
     CHAIN_META[chain.toLowerCase()] ?? {
       label: chain,
       symbol: chain.slice(0, 3).toUpperCase(),
-      color: "from-emerald-300 to-emerald-500",
+      color: "from-sky-300 to-sky-500",
       slug: chain.toLowerCase(),
     }
   );
@@ -66,18 +66,20 @@ export function ChainBadge({
     );
   }
 
+  // Render the per-chain gradient under the <img>. While the icon CDN is
+  // loading the badge is still visibly colored — important on the orb.
   return (
     <span
-      className={cn(base, "bg-secondary/40", dim, className)}
+      className={cn(base, "bg-gradient-to-br relative", meta.color, dim, className)}
       title={meta.label}
     >
       <img
         src={logoUrl(meta.slug)}
         alt={meta.label}
-        loading="lazy"
+        loading="eager"
         decoding="async"
         onError={() => setErrored(true)}
-        className="h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full rounded-full object-cover"
       />
     </span>
   );
